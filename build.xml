@@ -1,0 +1,107 @@
+<project default="jar">
+	<property name="build.src" value="src/main/java"/>
+	<property name="build.test" value="src/test/java"/>
+	<property name="build.dest" value="target"/>
+
+	<!-- JUnitの設定 -->
+	<property name="junit.report" value="build/test-reports"/>
+	<property name="junit.home" value="C:\Users\k-yanagihara\apps\junit4.10"/>
+	<property name="junit4.path" value="${junit.home}/junit-4.10.jar"/>
+	<property name="hamcrest.pash" value="C:\Users\k-yanagihara\apps\pleiades-e3.7-java_20110704\eclipse\plugins\org.hamcrest.core_1.1.0.v20090501071000.jar"/>
+
+	<!-- CheckStyleの設定 -->
+	<property name="checkstyle.report" value="build/checkstyle-reports/checkstyle_errors.xml"/>
+	<property name="checkstyle.home" value="C:\Users\k-yanagihara\apps\checkstyle-5.5"/>
+	<property name="checkstyle.lib" value="${checkstyle.home}/checkstyle-5.5-all.jar"/>
+	<property name="checkstyle.config" value="C:\Users\k-yanagihara\apps\checkstyle-5.5\sun_checks.xml"/>
+	<taskdef resource="checkstyletask.properties" classpath="${checkstyle.lib}"/>
+
+	<!-- FindBugsの設定 -->
+	<property name="findbugs.home" value="C:\Users\k-yanagihara\apps\findbugs-2.0.0" />
+	<property name="findbugs.lib" value="${findbugs.home}/lib/findbugs.jar" />
+	<property name="findbugs.report" value="build/findbugs-reports/findbugs_errors.xml"/>
+	<taskdef name="findbugs" classpath="${findbugs.lib}" classname="edu.umd.cs.findbugs.anttask.FindBugsTask"/>
+
+	<!-- javaファイルのコンパイル -->
+	<target name="compile">
+		<delete dir="${build.dest}/classes"/>
+		<mkdir dir="${build.dest}/classes" />
+		<javac
+			srcdir="${build.src}"
+			destdir="${build.dest}/classes"
+			includeantruntime="includeantruntime"
+			encoding="utf8">
+			<classpath>
+				<pathelement path="lib/*.jar"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- jarファイルの作成 -->
+	<target name="jar" depends="compile">
+		<jar destfile="build/app-commons.jar">
+			<fileset dir="${build.src}"/>
+			<fileset dir="${build.dest}/classes"/>
+		</jar>
+	</target>
+
+	<!-- テストケースのコンパイル -->
+	<target name="test-compile">
+		<delete dir="${build.dest}/test-classes"/>
+		<mkdir dir="${build.dest}/test-classes" />
+		<javac
+			srcdir="${build.test}"
+			destdir="${build.dest}/test-classes"
+			includeantruntime="includeantruntime"
+			encoding="utf8">
+			<classpath>
+				<pathelement path="lib/*.jar"/>
+				<pathelement path="${build.dest}/classes" />
+				<pathelement path="${junit4.path}"/>
+				<pathelement path="${hamcrest.pash}"/>
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- JUnitの実行とレポートの出力 -->
+	<target name="test" depends="compile,test-compile">
+		<delete dir="${junit.report}"/>
+		<mkdir dir="${junit.report}"/>
+		<junit printsummary="yes" haltonfailure="yes">
+			<classpath>
+				<pathelement path="lib/*.jar"/>
+				<pathelement path="${build.dest}/classes" />
+				<pathelement path="${build.dest}/test-classes" />
+				<pathelement path="${junit4.path}"/>
+				<pathelement path="${hamcrest.pash}"/>
+			</classpath>
+			<formatter type="xml"/>
+			<formatter type="plain"/>
+			<batchtest fork="yes" todir="${junit.report}">
+				<fileset dir="${build.test}">
+					<include name="**/*Test*.java"/>
+				</fileset>
+			</batchtest>
+		</junit>
+	</target>
+
+	<!-- CheckStyleの実行とレポートの出力 -->
+	<target name="checkstyle">
+		<checkstyle config="${checkstyle.config}" failOnViolation="false">
+			<fileset dir="${build.src}" includes="**/*.java" />
+			<fileset dir="${build.test}" includes="**/*.java" />
+			<formatter type="xml" tofile="${checkstyle.report}" />
+		</checkstyle>
+	</target>
+
+	<!-- FindBugsの実行とレポートの出力 -->
+	<target name="findbugs" depends="compile">
+		<findbugs home="${findbugs.home}"
+			output="xml"
+			outputFile="${findbugs.report}" >
+			<class location="${build.dest}/classes" />
+			<sourcePath path="${build.src}" />
+		</findbugs>
+	</target>
+
+</project>
